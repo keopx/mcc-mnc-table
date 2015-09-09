@@ -6,31 +6,33 @@ import urllib2
 import json
 
 td_re = re.compile('<td>([^<]*)</td>'*6)
+try:
+    html = urllib2.urlopen('http://mcc-mnc.com/').read()
+except urllib2.HTTPError, e:
+    print ''
+else:
+    tbody_start = False
 
-html = urllib2.urlopen('http://mcc-mnc.com/').read()
+    mcc_mnc_list = []
 
-tbody_start = False
+    for line in html.split('\n'):
+        if '<tbody>' in line:
+            tbody_start = True
+        elif '</tbody>' in line:
+            break
+        elif tbody_start:
+            td_search = td_re.search(line)
+            csv_line = ''
+            current_item = {}
+            td_search = td_re.split(line)
 
-mcc_mnc_list = []
+            current_item['mcc'] = td_search[1]
+            current_item['mnc'] = td_search[2]
+            current_item['iso'] = td_search[3]
+            current_item['country'] = td_search[4]
+            current_item['country_code'] = td_search[5]
+            current_item['network'] = td_search[6][0:-1]
 
-for line in html.split('\n'):
-    if '<tbody>' in line:
-        tbody_start = True
-    elif '</tbody>' in line:
-        break
-    elif tbody_start:
-        td_search = td_re.search(line)
-        csv_line = ''
-        current_item = {}
-        td_search = td_re.split(line)
+            mcc_mnc_list.append(current_item)
 
-        current_item['mcc'] = td_search[1]
-        current_item['mnc'] = td_search[2]
-        current_item['iso'] = td_search[3]
-        current_item['country'] = td_search[4]
-        current_item['country_code'] = td_search[5]
-        current_item['network'] = td_search[6][0:-1]
-
-        mcc_mnc_list.append(current_item)
-
-print json.dumps(mcc_mnc_list, indent=2)
+    print json.dumps(mcc_mnc_list, indent=2)
